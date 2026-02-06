@@ -1719,16 +1719,41 @@ const CharacterProfile = ({
 };
 
 const App = () => {
-  const [accounts, setAccounts] = useState<Account[]>(MOCK_ACCOUNTS);
-  const [selectedAccId, setSelectedAccId] = useState<string | null>(null); // Null by default to show Dashboard
+  // 1. Initialize State from LocalStorage
+  const [accounts, setAccounts] = useState<Account[]>(() => {
+    try {
+      const saved = localStorage.getItem('l2_dashboard_accounts');
+      return saved ? JSON.parse(saved) : MOCK_ACCOUNTS;
+    } catch(e) {
+      console.error("Failed to load accounts", e);
+      return MOCK_ACCOUNTS;
+    }
+  });
+
+  const [selectedAccId, setSelectedAccId] = useState<string | null>(null);
   const [selectedCharId, setSelectedCharId] = useState<string | null>(null);
   const [collapsed, setCollapsed] = useState(false);
-  const [itemRegistry, setItemRegistry] = useState<Record<string, string>>({});
+  
+  const [itemRegistry, setItemRegistry] = useState<Record<string, string>>(() => {
+    try {
+       const saved = localStorage.getItem('l2_dashboard_item_registry');
+       return saved ? JSON.parse(saved) : {};
+    } catch (e) {
+       return {};
+    }
+  });
   
   const [modal, setModal] = useState<'account' | 'character' | 'import_char' | 'import_items' | 'data_management' | null>(null);
-
-  // View State: 'dashboard' or 'profile'
   const [view, setView] = useState<'dashboard' | 'profile'>('dashboard');
+
+  // 2. Add Persistence Effects (Save to LocalStorage on change)
+  useEffect(() => {
+    localStorage.setItem('l2_dashboard_accounts', JSON.stringify(accounts));
+  }, [accounts]);
+
+  useEffect(() => {
+    localStorage.setItem('l2_dashboard_item_registry', JSON.stringify(itemRegistry));
+  }, [itemRegistry]);
 
   const selectedAccount = useMemo(() => accounts.find(a => a.id === selectedAccId), [accounts, selectedAccId]);
   const selectedCharacter = useMemo(() => selectedAccount?.characters.find(c => c.id === selectedCharId), [selectedAccount, selectedCharId]);
